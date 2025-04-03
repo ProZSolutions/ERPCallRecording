@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:background="@color/white"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <TextView
+        android:id="@+id/tvFileName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:textSize="16sp"
+        android:textColor="#000"
+        android:paddingBottom="8dp"
+        android:text="Recording File Name" />
+
+    <LinearLayout
+        android:id="@+id/layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:background="@drawable/rectange"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:textSize="12dp"
+            android:padding="4dp"
+            android:gravity="center"
+            android:id="@+id/btnPlayPause"
+            android:textColor="@color/black"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="▶ Play" />
+
+        <TextView
+            android:id="@+id/btnRewind"
+            android:textSize="12dp"
+            android:padding="4dp"
+            android:background="@drawable/rectange"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:gravity="center"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textColor="@color/black"
+            android:layout_height="wrap_content"
+            android:text=" Rewind" />
+
+        <TextView
+            android:id="@+id/btnForward"
+            android:background="@drawable/rectange"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:gravity="center"
+            android:textSize="12dp"
+            android:padding="4dp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:text=" Forward" />
+
+        <TextView
+            android:id="@+id/btnShare"
+            android:textSize="12dp"
+            android:padding="4dp"
+            android:background="@drawable/rectange"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:textColor="@color/black"
+            android:gravity="center"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="📤 Share" />
+
+    </LinearLayout>
+
+</LinearLayout>

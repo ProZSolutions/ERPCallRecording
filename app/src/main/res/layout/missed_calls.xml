@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/white"
+    android:layout_height="wrap_content">
+    <RelativeLayout
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="3dp"
+         android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:id="@+id/id_va1"
+            app:tint="@color/gray"
+            android:layout_marginLeft="5dp"
+            android:layout_gravity="center"
+            android:src="@drawable/calendar_icon"
+            android:layout_width="12dp"
+            android:layout_height="12dp"/>
+        <TextView
+            android:layout_toRightOf="@id/id_va1"
+            android:id="@+id/date"
+            android:layout_marginRight="5dp"
+            android:textColor="@color/black"
+            android:text="Missed Calls"
+            android:layout_gravity="center"
+            android:layout_marginLeft="5dp"
+            android:textSize="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="5dp"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:id="@+id/id_va"
+            app:tint="@color/red"
+            android:layout_marginLeft="5dp"
+            android:layout_gravity="center"
+            android:src="@drawable/missed_call"
+            android:layout_width="15dp"
+            android:layout_height="15dp"/>
+        <TextView
+            android:layout_toRightOf="@id/id_va"
+            android:id="@+id/mobile_number"
+            android:layout_marginRight="5dp"
+            android:textColor="@color/red"
+            android:text="Missed Calls"
+            android:layout_gravity="center"
+            android:layout_marginLeft="5dp"
+            android:textSize="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <ImageView
+            android:id="@+id/make_call"
+            android:visibility="invisible"
+            android:layout_marginRight="5dp"
+            android:src="@drawable/make_call"
+            android:layout_alignParentRight="true"
+            android:layout_width="23dp"
+            android:layout_height="23dp"/>
+    </RelativeLayout>
+    <View
+        android:background="@color/gray"
+        android:layout_marginBottom="5dp"
+        android:layout_width="match_parent"
+        android:layout_height="0.2dp"/>
+</LinearLayout>
