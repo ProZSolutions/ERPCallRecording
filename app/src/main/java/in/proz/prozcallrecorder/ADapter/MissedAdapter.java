@@ -40,7 +40,7 @@ public class MissedAdapter extends RecyclerView.Adapter<MissedAdapter.ProductVie
         MissedCallModal modal = missedCallModalList.get(position);
         holder.date.setText(commonClass.callFormat(modal.getM_datetime()));
         if(!TextUtils.isEmpty(modal.getM_mobile_no())){
-            holder.make_call.setVisibility(View.VISIBLE);
+            holder.make_call.setVisibility(View.GONE);
             holder.mobile_number.setText(modal.getM_mobile_no());
         }
         holder.make_call.setOnClickListener(new View.OnClickListener() {
@@ -64,6 +64,7 @@ public class MissedAdapter extends RecyclerView.Adapter<MissedAdapter.ProductVie
             super(itemView);
             date = itemView.findViewById(R.id.date);
             make_call = itemView.findViewById(R.id.make_call);
+            make_call.setVisibility(View.GONE);
             mobile_number = itemView.findViewById(R.id.mobile_number);
 
         }

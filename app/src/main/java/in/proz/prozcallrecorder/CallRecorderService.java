@@ -59,6 +59,15 @@ public class CallRecorderService extends Service {
     String start_call_time , end_call_time;
     private static final String CHANNEL_ID = "CallRecordingServiceChannel";
 
+
+
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) {
@@ -70,7 +79,7 @@ public class CallRecorderService extends Service {
 
 
         phoneNumber = intent.getStringExtra("PHONE_NUMBER");
-        Log.d("PROZCall"," phone "+phoneNumber+" on Start Comade");
+        Log.d(Tag," phone "+phoneNumber+" on Start Comade");
         callType = intent.getStringExtra("call_type");
         incomingNumber = intent.getStringExtra("incoming_number");
         deviceNumber = commonClass.getSharedPref(getApplicationContext(),"device_no"); // Fetch device number dynamically
@@ -82,12 +91,11 @@ public class CallRecorderService extends Service {
                 deviceNumber+" call start "+callStartTime);
 
 
-        createNotificationChannel();
-        //  startForeground(1, getNotification());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1, getNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
-        } else {
-            startForeground(1, getNotification());
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification notification = createNotification("Recording Call....");
+            startForeground(1, notification);
         }
 
         if (callType != null && !callType.isEmpty() && incomingNumber != null && !incomingNumber.isEmpty()) {
@@ -120,7 +128,26 @@ public class CallRecorderService extends Service {
             }
         }
     }
+    private Notification createNotification(String message) {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "CallRecording",
+                    "Call Recording Service",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "CallRecording")
+                .setContentTitle("Call Recorder")
+                .setContentText(message)
+                .setSmallIcon(R.drawable.make_call) // Your app icon
+                .setPriority(NotificationCompat.PRIORITY_LOW);
+
+        return builder.build();
+    }
     private Notification getNotification() {
         NotificationChannel channel = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -141,93 +168,66 @@ public class CallRecorderService extends Service {
 
         return builder.build();
     }
-    private void startRecording() {
-        try {
-            start_call_time = simpleDateFormat.format(new Date());
-            Log.d("PROZCall"," come to try block ");
-            /*File dir = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "PROZCall");
-            if (!dir.exists()) dir.mkdirs();*/
-            String fileName = "Call_" +  System.currentTimeMillis() + ".mp3";
+        private void startRecording() {
+            try {
+                start_call_time = simpleDateFormat.format(new Date());
+                Log.d(Tag," come to try block ");
+                String fileName = "temp_audio_recording_" + System.currentTimeMillis() + ".mp3";
+                audioFile = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), fileName); // App-specific storage
 
-            audioFile = getRecordingFile(this, fileName);
+                Log.d(Tag," file "+audioFile);
+                recorder = new MediaRecorder();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // Android 12 and above - Limited call recording support
+                    Log.d(Tag,"Android 12 and Above ");
+                    recorder.setAudioSource(MediaRecorder.AudioSource.MIC); // Use MIC as a fallback
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    Log.d(Tag,"Middle of Android ");
+                    recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
+                } else {
+                    Log.d(Tag,"Andorid below 10 ");
+                    recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
+                }
 
 
-            // File file = new File(audioFile, fileName);
-            Log.d("PROZCall"," file "+audioFile);
-           /* recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            recorder.setOutputFile(audioFile.getAbsolutePath());*/
-
-            recorder = new MediaRecorder();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION);
-            } else {
-                recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
+               // recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
+                recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                recorder.setOutputFile(audioFile.getAbsolutePath());
+                recorder.setAudioEncodingBitRate(128000);
+                recorder.setAudioSamplingRate(44100);
+                Log.d(Tag," call record start ");
+                recorder.prepare();
+                recorder.start();
+                isRecording = true;
+            } catch (Exception e) {
+                Log.d(Tag," error "+e.getMessage());
+                e.printStackTrace();
             }
-           // recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            recorder.setOutputFile(audioFile.getAbsolutePath());
-            recorder.setAudioEncodingBitRate(128000);
-            recorder.setAudioSamplingRate(44100);
-
-            recorder.prepare();
-            recorder.start();
-            isRecording = true;
-        } catch (Exception e) {
-            Log.d("PROZCall"," error "+e.getMessage());
-            e.printStackTrace();
-        }
     }
-    private File getRecordingFile(Context context, String fileName) {
-        File dir;
 
-       /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "ProzCallRecordings");
-
-            //  dir = new File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "PROZCall");
-            Log.d("PROZCall"," call1 "+dir);
-
-        } else {
-            dir = new File(Environment.getExternalStorageDirectory(), "ProzCallRecordings");
-
-            //  dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "PROZCall");
-            Log.d("PROZCall"," call2 "+dir);
-
-        }*/
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            dir = new File(Environment.getExternalStorageDirectory(), "IncomingCallRecord");
-            //    dir = new File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "PROZCall");
-        } else {
-            dir = new File(Environment.getExternalStorageDirectory(), "IncomingCallRecord");
-        }
-        Log.d("PROZCall","directory path "+dir);
-        if (!dir.exists()) {
-            boolean success = dir.mkdirs();
-            if (!success) {
-                Log.d("PROZCall"," failed to create dir ");
-            }else{
-                Log.d("PROZCall"," directory created ");
-            }
-        }else{
-            Log.d("audioFile"," directory exist");
-        }
-
-        return new File(dir, fileName);
-    }
     private void stopRecording() {
         end_call_time = simpleDateFormat.format(new Date());
-        Log.d("PROZCall"," on stop ");
-        if (isRecording && recorder != null) {
-            Log.d("PROZCall"," is stop record ");
-            recorder.stop();
-            recorder.release();
-            recorder = null;
-            isRecording = false;
+        Log.d(Tag," on stop ");
 
-            uploadRecording(audioFile);
+        try {
+            if (isRecording && recorder != null) {
+                Log.d(Tag, "is stop record");
+                recorder.stop();
+                recorder.release();
+                recorder = null;
+                isRecording = false;
+
+                uploadRecording(audioFile);
+            }
+        } catch (IllegalStateException e) {
+            Log.e(Tag, "Error stopping recording: " + e.getMessage());
+        } finally {
+            if (recorder != null) {
+                recorder.release();
+                recorder = null;
+                isRecording = false;
+            }
         }
     }
     private void uploadRecording(File audioFile) {
@@ -350,7 +350,7 @@ public class CallRecorderService extends Service {
 /*
     private void uploadRecording(File audioFile) {
         if (audioFile == null || !audioFile.exists()) {
-            Log.e("PROZCall", "File does not exist for upload!");
+            Log.e(Tag, "File does not exist for upload!");
             return;
         }
         RequestBody requestFile = RequestBody.create(MediaType.parse("audio/mp3"), audioFile);
@@ -395,7 +395,7 @@ public class CallRecorderService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d("PROZCall"," on destroy");
+        Log.d(Tag," on destroy");
         stopRecording();
         super.onDestroy();
     }
@@ -406,8 +406,5 @@ public class CallRecorderService extends Service {
         startActivity(intent);
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+
 }
