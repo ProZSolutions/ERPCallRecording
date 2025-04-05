@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import in.proz.prozcallrecorder.ADapter.RecordingAdapter;
+import in.proz.prozcallrecorder.InternalStorage.CallRecordingHelper;
 
 public class RecordingListActivity extends AppCompatActivity {
 
@@ -20,6 +21,7 @@ public class RecordingListActivity extends AppCompatActivity {
 
         ListView listView = findViewById(R.id.recordingList);
         List<String> recordings = getRecordings();
+      //  ArrayList<String> recordingsnew = CallRecordingHelper.getCallRecordingPaths();
 
 
         String directoryPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/IncomingCallRecord";

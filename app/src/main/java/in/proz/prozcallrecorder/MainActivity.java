@@ -14,12 +14,14 @@
     import android.content.Intent;
     import android.content.ServiceConnection;
     import android.content.pm.PackageManager;
+    import android.database.Cursor;
     import android.media.projection.MediaProjectionManager;
     import android.net.Uri;
     import android.os.Build;
     import android.os.Bundle;
     import android.os.Environment;
     import android.os.IBinder;
+    import android.provider.MediaStore;
     import android.provider.Settings;
     import android.telecom.TelecomManager;
     import android.telephony.TelephonyManager;
@@ -38,7 +40,8 @@
     import java.util.List;
 
     import in.proz.prozcallrecorder.ADapter.CallAdapter;
-     import in.proz.prozcallrecorder.Modal.CallListModal;
+    import in.proz.prozcallrecorder.InternalStorage.CallRecordingHelper;
+    import in.proz.prozcallrecorder.Modal.CallListModal;
     import in.proz.prozcallrecorder.Modal.CallMainModal;
     import in.proz.prozcallrecorder.Retrofit.APIInterface;
     import in.proz.prozcallrecorder.Retrofit.ApiClient;
@@ -72,7 +75,6 @@
 
 
 
-        private static final int NEWDIALOE = 123;
 
 
 
@@ -81,6 +83,7 @@
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_main);
              checkAndRequestAccessibilityService();
+            MediaFolder();
             startService(new Intent(MainActivity.this, CallRecorderService.class));
             requestPermissions(new String[]{
                     Manifest.permission.READ_PHONE_STATE,
@@ -89,6 +92,13 @@
                     Manifest.permission.READ_CALL_LOG,
                     Manifest.permission.READ_CONTACTS}, 5);
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (!Environment.isExternalStorageManager()) {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivity(intent);
+                }else{
+                }
+            }
             // Request permissions
             String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_PHONE_STATE
                   };
@@ -140,12 +150,7 @@
             return getPackageName().equals(telecomManager.getDefaultDialerPackage());
         }
 
-        private void requestDefaultDialer() {
-            Log.d("TeleCallRecording"," request deffault  dialer ");
-            Intent intent = new Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER);
-            intent.putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, getPackageName());
-            startActivityForResult(intent, NEWDIALOE);
-        }
+
 
             public void checkAndRequestAccessibilityService() {
             if (!AccessibilityHelper.isAccessibilityServiceEnabled(this, CallAccessibilityService.class)) {
@@ -303,19 +308,35 @@
                     // The user declined to set your app as the default dialer
                     Log.d(Tag, Page + " App was not set as the default dialer");
                 }
-            }else  if (requestCode == NEWDIALOE) {
-                if (isDefaultDialer()) {
-                    Log.d("TeleCallRecording", Page + " App is now the default dialer");
-
-                    //  Toast.makeText(this, "App set as default dialer", Toast.LENGTH_SHORT).show();
-                } else {
-                    Log.d("TeleCallRecording", Page + " App is not the default dialer");
-
-                    // Toast.makeText(this, "Failed to set as default dialer", Toast.LENGTH_SHORT).show();
-                }
             }
         }
+        public void MediaFolder(){
+            Cursor cursor = getContentResolver().query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    null,
+                    MediaStore.Audio.Media.DURATION + " > ?",
+                    new String[]{"5000000"}, // > 5 seconds
+                    MediaStore.Audio.Media.DATE_ADDED + " DESC"
+            );
 
+            Log.d("RKListing"," cursor "+cursor);
+            if (cursor != null) {
+                Log.d("RKListing"," come in  ");
+
+                while (cursor.moveToNext()) {
+                    Log.d("RKListing"," come to white");
+                    String filePath = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
+                    Log.d("RKListing"," file path "+filePath);
+                    if (filePath.toLowerCase().contains("call")) {
+                        Log.d("RKListing", filePath);
+                    }
+                }
+                cursor.close();
+            }else{
+                Log.d("RKListing"," cursor null ");
+            }
+
+        }
 
 
         private void getDeviceMobileNumber() {
@@ -372,6 +393,7 @@
 
                     getDeviceMobileNumber();
                     promptUserToSetDefaultDialer();
+                   // runRecordingFinder();
 
                    // startService(new Intent(this, CallRecordingService.class));
                 } else {
@@ -385,6 +407,12 @@
                     Toast.makeText(this, "Permissions Denied", Toast.LENGTH_LONG).show();
                 }
             }
+        }
+
+        private void runRecordingFinder() {
+            String recordingsPath = CallRecordingHelper.getCallRecordingPath(MainActivity.this, "+918428381082");
+            Log.d("RKListing"," recording "+recordingsPath);
+
         }
 
     }

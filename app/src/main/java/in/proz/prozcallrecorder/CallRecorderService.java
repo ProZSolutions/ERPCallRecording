@@ -7,13 +7,16 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
+import android.database.Cursor;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
+import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -28,6 +31,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import in.proz.prozcallrecorder.InternalStorage.CallRecordingHelper;
 import in.proz.prozcallrecorder.Retrofit.APIInterface;
 import in.proz.prozcallrecorder.Retrofit.ApiClient;
 import in.proz.prozcallrecorder.Retrofit.CommonClass;
@@ -43,7 +47,7 @@ import retrofit2.Response;
 public class CallRecorderService extends Service {
     private MediaRecorder recorder;
     private boolean isRecording = false;
-     private File audioFile;
+    private File audioFile;
     private String phoneNumber;
 
 
@@ -53,7 +57,7 @@ public class CallRecorderService extends Service {
 
     private String deviceNumber;
     private long callStartTime;
-    String Tag="MobileCallRecording";
+    String Tag="RKListing";
     String Page ="CallRecordingService";
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
     String start_call_time , end_call_time;
@@ -98,35 +102,17 @@ public class CallRecorderService extends Service {
             startForeground(1, notification);
         }
 
+        Log.d("MobileCallRecording"," call type "+callType+" incomint cn "+incomingNumber);
+
         if (callType != null && !callType.isEmpty() && incomingNumber != null && !incomingNumber.isEmpty()) {
+            start_call_time = simpleDateFormat.format(new Date());
+
             Log.d(Tag, Page + " Starting recording...");
-            startRecording();
         } else {
             Log.e("CallRecordingService", "Call is not active, skipping recording.");
             stopSelf(); // Stop the service if no active call
         }
         return START_STICKY;
-    }
-    private void createNotificationChannel() {
-        Log.d(Tag,Page+" create notification  ");
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d(Tag,Page+" create notification if  ");
-
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Call Recording Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                Log.d(Tag,Page+" create not manager!null  ");
-                manager.createNotificationChannel(serviceChannel);
-            }else{
-                Log.d(Tag,Page+" manager null ");
-
-            }
-        }
     }
     private Notification createNotification(String message) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -148,88 +134,42 @@ public class CallRecorderService extends Service {
 
         return builder.build();
     }
-    private Notification getNotification() {
-        NotificationChannel channel = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            channel = new NotificationChannel(
-                    "call_recorder",
-                    "Call Recorder",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(channel);
-        }
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "call_recorder")
-                .setContentTitle("Recording Call")
-                .setContentText("Call recording in progress")
-                .setSmallIcon(R.drawable.outgoing_call)
-                .setPriority(NotificationCompat.PRIORITY_LOW);
-
-        return builder.build();
-    }
-        private void startRecording() {
-            try {
-                start_call_time = simpleDateFormat.format(new Date());
-                Log.d(Tag," come to try block ");
-                String fileName = "temp_audio_recording_" + System.currentTimeMillis() + ".mp3";
-                audioFile = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), fileName); // App-specific storage
-
-                Log.d(Tag," file "+audioFile);
-                recorder = new MediaRecorder();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    // Android 12 and above - Limited call recording support
-                    Log.d(Tag,"Android 12 and Above ");
-                    recorder.setAudioSource(MediaRecorder.AudioSource.MIC); // Use MIC as a fallback
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    Log.d(Tag,"Middle of Android ");
-                    recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
-                } else {
-                    Log.d(Tag,"Andorid below 10 ");
-                    recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
-                }
-
-
-               // recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
-                recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-                recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-                recorder.setOutputFile(audioFile.getAbsolutePath());
-                recorder.setAudioEncodingBitRate(128000);
-                recorder.setAudioSamplingRate(44100);
-                Log.d(Tag," call record start ");
-                recorder.prepare();
-                recorder.start();
-                isRecording = true;
-            } catch (Exception e) {
-                Log.d(Tag," error "+e.getMessage());
-                e.printStackTrace();
-            }
-    }
 
     private void stopRecording() {
         end_call_time = simpleDateFormat.format(new Date());
-        Log.d(Tag," on stop ");
+
+
+        Log.d("RKListing"," call type "+callType +" incoint "+incomingNumber);
 
         try {
-            if (isRecording && recorder != null) {
-                Log.d(Tag, "is stop record");
-                recorder.stop();
-                recorder.release();
-                recorder = null;
-                isRecording = false;
+            Log.d(Tag, "sleep for 2 sec ");
 
-                uploadRecording(audioFile);
+            Thread.sleep(2000); // Delay to allow system to finalize writing
+
+            String latestFile = CallRecordingHelper.getCallRecordingPath(this,incomingNumber);
+            Log.d(Tag," last file "+latestFile+" incoimt "+incomingNumber);
+            if (latestFile != null ) {
+                Log.d(Tag," come not null ");
+                File fil = new File(latestFile);
+                Log.d(Tag," latest file "+fil);
+                if(fil.exists()){
+                    Log.d(Tag," file exist "+fil);
+                    uploadRecording(fil);
+                }else{
+                    Log.d(Tag," File not exist ");
+                }
+            } else {
+                Log.d(Tag, "No latest recording file found!");
             }
-        } catch (IllegalStateException e) {
-            Log.e(Tag, "Error stopping recording: " + e.getMessage());
-        } finally {
-            if (recorder != null) {
-                recorder.release();
-                recorder = null;
-                isRecording = false;
-            }
+        } catch (InterruptedException e) {
+            Log.d(Tag," error "+e.getMessage());
+            e.printStackTrace();
         }
+        Log.d(Tag, "on stop");
+
     }
+
+
     private void uploadRecording(File audioFile) {
         List<MissedCallModal> missedCalls = CallReceiver.getMissedCalls();
         Log.d(Tag,Page+" uploading call record  ");
@@ -237,7 +177,7 @@ public class CallRecorderService extends Service {
                 " call "+callType+" missed "+missedCalls+
                 " reci path "+audioFile+" start time "+start_call_time+" end time "+end_call_time);
 
-       // File path = new File(recordingPath);
+        // File path = new File(recordingPath);
         Log.d(Tag,Page+" file path "+audioFile+" is exist "+audioFile.exists());
         if(!TextUtils.isEmpty(deviceNumber) && !TextUtils.isEmpty(incomingNumber) &&
                 !TextUtils.isEmpty(callType)  ){
@@ -337,61 +277,9 @@ public class CallRecorderService extends Service {
 
         }
 
-
-
-
-
-
-
-        // Call your API here with deviceNumber, incomingNumber, callStartTime, recordingPath, callType, and missedCalls
     }
 
 
-/*
-    private void uploadRecording(File audioFile) {
-        if (audioFile == null || !audioFile.exists()) {
-            Log.e(Tag, "File does not exist for upload!");
-            return;
-        }
-        RequestBody requestFile = RequestBody.create(MediaType.parse("audio/mp3"), audioFile);
-        MultipartBody.Part body = MultipartBody.Part.createFormData("file", audioFile.getName(), requestFile);
-
-
-        ProgressBar progressBar = new ProgressBar(CallRecorderService.this);
-        if(body!=null){
-            progressBar.setVisibility(View.VISIBLE);
-            APIInterface apiInterface= ApiClient.getApiClient().create(APIInterface.class);
-            Call<CommonPojo> call =apiInterface.uploadMP3File(body);
-            call.enqueue(new Callback<CommonPojo>() {
-                @Override
-                public void onResponse(Call<CommonPojo> call, Response<CommonPojo> response) {
-                    progressBar.setVisibility(View.GONE);
-
-                    if(response.isSuccessful()){
-                        if(response.code()==200){
-                            if(response.body().getStatus().equals("success")){
-                                Toast.makeText(getApplicationContext(),"MP3 uploaded successfully",Toast.LENGTH_SHORT).show();
-                            }else{
-                                Toast.makeText(getApplicationContext(),"Failed to upload MP3",Toast.LENGTH_SHORT).show();
-                            }
-                        }else{
-                            Toast.makeText(getApplicationContext(),"File Upload Error",Toast.LENGTH_SHORT).show();
-                        }
-                    }else{
-                        Toast.makeText(getApplicationContext(),"File Upload Error",Toast.LENGTH_SHORT).show();
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<CommonPojo> call, Throwable t) {
-                    progressBar.setVisibility(View.GONE);
-
-                    Toast.makeText(getApplicationContext(),"File Upload Error",Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-    }
-*/
 
     @Override
     public void onDestroy() {
